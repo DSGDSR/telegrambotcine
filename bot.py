@@ -1,127 +1,59 @@
 # -*- coding: UTF-8 -*-
 # encoding=utf8
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
 
-#users = {}
-
+import db.tokens as tk
+from funcs import *
 import telebot
 from telebot import *
-import tmdbsimple as tmdb
-from tokens import *
 import requests
 
 img_url = "https://image.tmdb.org/t/p/w500"
-tmdb.API_KEY = API_KEY_TMDB
 
-tb = telebot.TeleBot(TOKEN)
-
-'''def addFilm(idu, idp):
-    if idu in users:
-        users[idu].append(idp)
-    else:
-        users[idu] = [idp]
-
-def removeFilm(idu, idp):
-    users[idu].remove(idp)'''
+tb = telebot.TeleBot(tk.TOKEN)
 
 def extract_arg(arg):
     return arg.split(" ", 1)[1:]
 
-@tb.message_handler(commands=['start'])
-def welcome(q):
-    tb.send_message(q.chat.id, "Bienvenido "+q.from_user.first_name+". \n Disfruta del bot, si necesitas ayuda haz uso del comando '/help'.")
-
-@tb.message_handler(commands=['help'])
-def help(q):
-    presentacion = "*Ayuda* \nLos comandos In-Line no deben enviarse, sólo colocarlos en la línea de texto. \n"
-    comandos = "Aquí se exponen todos los comandos: \n=> upcoming - devuelve un listado con las películas a estrenar \n=> valoradas - devuelve un listado con las películas más valoradas \n=> populares - devuelve un listado con las películas populares del momento.\n=> cartelera - devuelve un listado con las películas actualmente en los cines.\nSi sólo se escribe el nombre de la película, se hará una búsqueda de ella.\n\n"
-    spam = "Bot creado por @Skr0tex, @andresitoperson y @davidsnchz99"
-    aux = presentacion + comandos + spam
-    tb.send_message(q.chat.id, aux, parse_mode="Markdown")
-
 @tb.inline_handler(lambda query: True)
-def search(q):
+def inline_handler(q):
     opt = q.query.split(" ", 1)[0].strip(" ")
     #print(opt)
     if opt=="valoradas":
-        #try:
-            list = []
-            i = 1
-            url_foto = 'https://image.tmdb.org/t/p/w500'
-            url = "https://api.themoviedb.org/3/movie/top_rated?language=es-ES&api_key=" + API_KEY_TMDB
-            response = requests.get(url)
-            data = response.json()['results']
-            id = 1
-            for i in data[:20]:
-                list.append(types.InlineQueryResultArticle(id, i['title'], types.InputTextMessageContent("[⁣]("+ url_foto+i['backdrop_path'] + ")"+"\n"+'*'+i['title']+'*'+'\n\n'+i['overview'], parse_mode="Markdown"),description=i['overview'],thumb_url=url_foto+i['backdrop_path'],hide_url=True))
-                id+=1
+        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "top_rated", 20)
 
-            tb.answer_inline_query(q.id, list, cache_time=1)
-        #except:
-            pass
+    elif opt=="populares":
+        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "popular", 20)
 
-    if opt=="populares":
-        #try:
-            list = []
-            i = 1
-            url_foto = 'https://image.tmdb.org/t/p/w500'
-            url = "https://api.themoviedb.org/3/movie/popular?language=es-ES&api_key=" + API_KEY_TMDB
-            response = requests.get(url)
-            data = response.json()['results']
-            id = 1
-            for i in data[:20]:
-                list.append(types.InlineQueryResultArticle(id,i['title'],types.InputTextMessageContent("[⁣]("+ url_foto+i['backdrop_path'] + ")"+"\n"+'*'+i['title']+'*'+'\n\n'+i['overview'], parse_mode="Markdown"),description=i['overview'],thumb_url=url_foto+i['backdrop_path'],hide_url=True))
-                id+=1
+    elif opt=="upcoming":
+        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "upcoming", 10)
 
-            tb.answer_inline_query(q.id, list, cache_time=1)
-        #except:
-            pass
-
-    if opt=="upcoming":
-        try:
-            list = []
-            i = 1
-            url_foto = 'https://image.tmdb.org/t/p/w500'
-            url = "https://api.themoviedb.org/3/movie/upcoming?language=es-ES&api_key=" + API_KEY_TMDB
-            response = requests.get(url)
-            id = 1
-            for i in response.json()['results']:
-                list.append(types.InlineQueryResultArticle(id,i['title'],types.InputTextMessageContent("[⁣]("+ url_foto+i['backdrop_path'] + ")"+"\n"+'*'+i['title']+'*'+'\n\n'+i['overview'], parse_mode="Markdown"),description=i['overview'],thumb_url=url_foto+i['backdrop_path'],hide_url=True))
-                id+=1
-
-            tb.answer_inline_query(q.id, list, cache_time=1)
-        except:
-            pass
-
-    if opt=="cartelera":
-        try:
-            url = "https://api.themoviedb.org/3/movie/now_playing?language=es-ES&api_key=" + API_KEY_TMDB
-            response = requests.get(url)
-            data = response.json()['results']
-            lista_query = []
-            i = 1
-            for f in data[:20]:
-                lista_query.append(types.InlineQueryResultArticle(i,f['title'],types.InputTextMessageContent("[⁣]("+ img_url+f['backdrop_path'] + ")"+"\n"+'*'+f['title']+'*'+'\n\n'+f['overview'], parse_mode="Markdown"),description=f['overview'],thumb_url=img_url+f['backdrop_path']))
-                i+=1
-            tb.answer_inline_query(q.id, lista_query, cache_time=1)
-        except:
-            pass
+    elif opt=="cartelera":
+        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "now_playing", 20)
 
     else:
-        try:
-            search = tmdb.Search()
-            resp = search.movie(query=q.query)
-            lista_query = []
-            i = 1
-            for f in search.results[:10]:
-                lista_query.append(types.InlineQueryResultArticle(i,f['title'],types.InputTextMessageContent("[⁣]("+ img_url+f['backdrop_path'] + ")"+"\n"+'*'+f['title']+'*'+'\n\n'+f['overview'], parse_mode="Markdown"),description=f['overview'],thumb_url=img_url+f['backdrop_path']))
-                i+=1
+        sendInlineSearch(tb, q.id, img_url, tk.API_KEY_TMDB, q.query, 10)
 
-            tb.answer_inline_query(q.id, lista_query, cache_time=1)
-        except:
-            pass
+@tb.message_handler(commands=['start'])
+def welcome(m):
+    tb.send_message(m.chat.id, "Bienvenido "+m.from_user.first_name+". \n Disfruta del bot, si necesitas ayuda haz uso del comando '/help'.")
+
+@tb.message_handler(commands=['help'])
+def help(m):
+    presentacion = "*Ayuda* \nLos comandos In-Line no deben enviarse, sólo colocarlos en la línea de texto. \n"
+    comandos = "Aquí se exponen todos los comandos: \n=> upcoming - devuelve un listado con las películas a estrenar \n=> valoradas - devuelve un listado con las películas más valoradas \n=> populares - devuelve un listado con las películas populares del momento.\n=> cartelera - devuelve un listado con las películas actualmente en los cines.\nSi sólo se escribe el nombre de la película, se hará una búsqueda de ella.\n\n"
+    spam = "Bot creado por @Skr0tex, @andresitoperson y @davidsnchz99"
+    txt = presentacion + comandos + spam
+    tb.send_message(m.chat.id, txt, parse_mode="Markdown")
+
+@tb.message_handler(commands=['cartelera'])
+def cartelera(m):
+    sendInlineQuery(tb, m.from_user.id, img_url, tk.API_KEY_TMDB, "now_playing", 20)
+
+@tb.message_handler(commands=['search'])
+def search(m):
+    q = extract_arg(m.text)
+    t = searchFilm(tb, tk.API_KEY_TMDB, q)
+    tb.send_message(m.chat.id, t, parse_mode="Markdown")
 
 tb.polling()
 
@@ -146,7 +78,7 @@ def search(m):
 
 @tb.message_handler(commands=["upcoming"])
 def print_upcoming(m):
-    url = "https://api.themoviedb.org/3/movie/upcoming?language=es-ES&api_key=" + API_KEY_TMDB
+    url = "https://api.themoviedb.org/3/movie/upcoming?language=es-ES&api_key=" + tk.API_KEY_TMDB
     response = requests.get(url)
     for i in response.json()["results"]:
         bot.send_message(m.chat.id, i["title"])'''
