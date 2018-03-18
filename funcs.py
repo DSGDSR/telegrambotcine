@@ -52,8 +52,9 @@ def searchFilm(tb, api, query):
         head = "Has buscado: *" + query + "*\n\n"
         lista = ""
         idp=1
-        for f in data[:10]:
-            lista += idp + ".- " + f['title'] + "\n"
+        for f in data[:7]:
+            fstr = str(idp) + ".- " + f['title'] + "\n"
+            lista += fstr
             idp+=1
         foo = "\nHaz click en cualquier película para ver la información"
         t = head + lista + foo
@@ -63,5 +64,5 @@ def searchFilm(tb, api, query):
         pass
 
 
-def getFilmIngo():
+def getFilmInfo():
     pass

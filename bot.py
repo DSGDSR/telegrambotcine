@@ -10,28 +10,55 @@ import requests
 img_url = "https://image.tmdb.org/t/p/w500"
 
 tb = telebot.TeleBot(tk.TOKEN)
+user = tb.get_me()
 
 def extract_arg(arg):
     return arg.split(" ", 1)[1:]
 
+
+
+################################################
+#################### INLINE ####################
+################################################
+
+@tb.inline_handler(lambda query: query.query.lower() == 'help' or query.query == '' )
+def inline_help(q):
+    inline = types.InlineQueryResultArticle(1, 
+                                            "AYUDA", 
+                                            types.InputTextMessageContent("/help", parse_mode="Markdown"),
+                                            description="Muestra ayuda sobre las consultas posibles al bot",
+                                            thumb_url='http://dev.dsgdsr.me/botcine/help.jpg')
+    tb.answer_inline_query(q.id, [inline], cache_time=1)
+
+@tb.inline_handler(lambda query: (query.query.startswith('cartelera') or query.query.startswith('now_palying') or query.query.startswith('encines'))
+                   and len(query.query.split()) == 1)
+def inline_cartelera(q):
+    sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "now_playing", 20)
+
+@tb.inline_handler(lambda query: (query.query.startswith('upcoming') or query.query.startswith('featured') or query.query.startswith('porvenir') or query.query.startswith('proximamente'))
+                   and len(query.query.split()) == 1)
+def inline_upcoming(q):
+    sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "upcoming", 10)
+
+@tb.inline_handler(lambda query: (query.query.startswith('top') or query.query.startswith('valoradas'))
+                   and len(query.query.split()) == 1)
+def inline_top(q):
+    sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "top_rated", 20)
+
+@tb.inline_handler(lambda query: (query.query.startswith('populares') or query.query.startswith('popu') or query.query.startswith('pop'))
+                   and len(query.query.split()) == 1)
+def inline_popu(q):
+    sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "popular", 20)
+
 @tb.inline_handler(lambda query: True)
 def inline_handler(q):
-    opt = q.query.split(" ", 1)[0].strip(" ")
-    #print(opt)
-    if opt=="valoradas":
-        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "top_rated", 20)
+    sendInlineSearch(tb, q.id, img_url, tk.API_KEY_TMDB, q.query, 10)
 
-    elif opt=="populares":
-        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "popular", 20)
 
-    elif opt=="upcoming":
-        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "upcoming", 10)
 
-    elif opt=="cartelera":
-        sendInlineQuery(tb, q.id, img_url, tk.API_KEY_TMDB, "now_playing", 20)
-
-    else:
-        sendInlineSearch(tb, q.id, img_url, tk.API_KEY_TMDB, q.query, 10)
+##################################################
+#################### COMANDOS ####################
+##################################################
 
 @tb.message_handler(commands=['start'])
 def welcome(m):
@@ -47,38 +74,16 @@ def help(m):
 
 @tb.message_handler(commands=['cartelera'])
 def cartelera(m):
-    sendInlineQuery(tb, m.from_user.id, img_url, tk.API_KEY_TMDB, "now_playing", 20)
+    pass
 
 @tb.message_handler(commands=['search'])
 def search(m):
     q = extract_arg(m.text)
-    t = searchFilm(tb, tk.API_KEY_TMDB, q)
+    qr = ""
+    for w in q:
+        qr += w + " " 
+    t = searchFilm(tb, tk.API_KEY_TMDB, qr)
     tb.send_message(m.chat.id, t, parse_mode="Markdown")
+    print(user)
 
 tb.polling()
-
-'''@tb.message_handler(commands=['search'])
-def search(m):
-    search = tmdb.Search()
-    q = extract_arg(m.text)
-    resp = search.movie(query=q)
-    #tb.send_message(m.from_user.id, q)
-    #print(search.results)
-    for f in search.results[:5]:
-        print(f['title'])
-
-@tb.message_handler(commands=['cartelera'])
-def search(m):
-    url = "https://api.themoviedb.org/3/movie/now_playing?api_key=" + tmdb_key
-    response = requests.get(url)
-    data = response.json()['results']
-    #print(response.json())
-    for f in data[:20]:
-        print(f['title'])
-
-@tb.message_handler(commands=["upcoming"])
-def print_upcoming(m):
-    url = "https://api.themoviedb.org/3/movie/upcoming?language=es-ES&api_key=" + tk.API_KEY_TMDB
-    response = requests.get(url)
-    for i in response.json()["results"]:
-        bot.send_message(m.chat.id, i["title"])'''
