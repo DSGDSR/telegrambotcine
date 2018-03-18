@@ -74,7 +74,11 @@ def help(m):
 
 @tb.message_handler(commands=['cartelera'])
 def cartelera(m):
-    pass
+    cart = searchSec(tb, tk.API_KEY_TMDB, "now_playing")
+    t = cart[0]
+    img = cart[1]
+    tb.send_photo(m.chat.id, img)
+    tb.send_message(m.chat.id, t, parse_mode="Markdown")
 
 @tb.message_handler(commands=['search'])
 def search(m):
@@ -84,6 +88,5 @@ def search(m):
         qr += w + " " 
     t = searchFilm(tb, tk.API_KEY_TMDB, qr)
     tb.send_message(m.chat.id, t, parse_mode="Markdown")
-    print(user)
 
 tb.polling()
