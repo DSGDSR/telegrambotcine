@@ -65,7 +65,7 @@ def searchFilm(tb, api, query):
 
 
 def searchSec(tb, api, query):
-    #try:
+    try:
         url = "https://api.themoviedb.org/3/movie/" + str(query) + "?language=es-ES&api_key=" + str(api)
         response = requests.get(url)
         data = response.json()['results']
@@ -82,7 +82,7 @@ def searchSec(tb, api, query):
         msg = [t,imgurl]
 
         return msg
-    #except:
+    except:
         pass
 
 
