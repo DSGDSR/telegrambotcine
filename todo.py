@@ -6,6 +6,6 @@ TO-DO
 
 nombre:
 
-1- Añadir pelicula a ver (query)
+1- /movie + id erronea: lanza error y crashea
 
 '''

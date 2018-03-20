@@ -3,17 +3,22 @@
 
 import db.tokens as tk
 from funcs import *
+import math
 import telebot
 from telebot import *
 import requests
+from db.db import *
+
+import sys
+reload(sys)
+sys.setdefaultencoding('UTF8')
 
 img_url = "https://image.tmdb.org/t/p/w500"
+conn = sqlite3.connect('db/users.db', check_same_thread = False)
+c = conn.cursor()
+#c.execute("""CREATE TABLE IF NOT EXISTS  movie_user (id INTEGER PRIMARY KEY AUTOINCREMENT, user TEXT, movie TEXT, estado INTEGER)""")
 
 tb = telebot.TeleBot(tk.TOKEN)
-user = tb.get_me()
-
-def extract_arg(arg):
-    return arg.split(" ", 1)[1:]
 
 
 
@@ -23,8 +28,8 @@ def extract_arg(arg):
 
 @tb.inline_handler(lambda query: query.query.lower() == 'help' or query.query == '' )
 def inline_help(q):
-    inline = types.InlineQueryResultArticle(1, 
-                                            "AYUDA", 
+    inline = types.InlineQueryResultArticle(1,
+                                            "AYUDA",
                                             types.InputTextMessageContent("/help", parse_mode="Markdown"),
                                             description="Muestra ayuda sobre las consultas posibles al bot",
                                             thumb_url='http://dev.dsgdsr.me/botcine/help.jpg')
@@ -85,8 +90,77 @@ def search(m):
     q = extract_arg(m.text)
     qr = ""
     for w in q:
-        qr += w + " " 
+        qr += w + " "
     t = searchFilm(tb, tk.API_KEY_TMDB, qr)
     tb.send_message(m.chat.id, t, parse_mode="Markdown")
+
+@tb.message_handler(commands=['lista'])
+def lista(m):   
+    lista = getMovies(m.from_user.id, conn, c)
+    num = len(lista)
+    pages = int(math.ceil(num/10.0))
+    keyboard = []
+    for p in range(pages):
+        keyboard.append([types.InlineKeyboardButton(text=p+1, callback_data='page')])
+    print(keyboard)
+    tb.send_message(m.chat.id, "hola", reply_markup=types.InlineKeyboardMarkup(keyboard))
+
+@tb.message_handler(commands=['movie'])
+def movie(m):
+    q = extract_arg(m.text)
+    qr = ""
+    for w in q:
+        qr += w + " "
+    t = getMovieInfo(tb, tk.API_KEY_TMDB, qr, m.chat.id, conn, c) #337167
+    tb.send_photo(m.chat.id, t[1])
+    tb.send_message(m.chat.id, t[0], parse_mode="Markdown", reply_markup=t[2])
+
+
+
+###################################################
+#################### CALLBACKS ####################
+###################################################
+
+@tb.callback_query_handler(func=lambda call: call.data.startswith('add_pend'))
+def add_pend_handler(call):
+    idu = call.from_user.id
+    idp = extract_arg(call.data)
+    addM = addMovie(idu, idp[0], pend, conn, c)
+    if(addM == None):
+        tb.send_message(call.from_user.id, "La película ya esta en tu lista de pendientes", parse_mode="Markdown")
+    else:
+        tb.send_message(call.from_user.id, "Película añadida a pendientes", parse_mode="Markdown")
+
+@tb.callback_query_handler(func=lambda call: call.data.startswith('add_seen'))
+def add_pend_handler(call):
+    idu = call.from_user.id
+    idp = extract_arg(call.data)
+    addM = addMovie(idu, idp[0], seen, conn, c)
+    if(addM == None):
+        tb.send_message(call.from_user.id, "La película ya esta en tu lista de vistas", parse_mode="Markdown")
+    else:
+        tb.send_message(call.from_user.id, "Película añadida a vistas", parse_mode="Markdown")
+
+@tb.callback_query_handler(func=lambda call: call.data.startswith('set_seen'))
+def add_pend_handler(call):
+    idu = call.from_user.id
+    idp = extract_arg(call.data)
+    setM = setMovie(idu, idp[0], seen, conn, c)
+    if(setM == None):        
+        tb.send_message(call.from_user.id, "Error: la película no esta en tu lista de pendientes; Pruebe a ejecutar el comando /movie " + str(idp[0]) + " y añadirla a vistas", parse_mode="Markdown")
+    elif(setM == 1):
+        tb.send_message(call.from_user.id, "Película añadida a vistas", parse_mode="Markdown")
+    elif(setM == 0):
+        tb.send_message(call.from_user.id, "La película ya esta en tu lista de vistas", parse_mode="Markdown")
+
+@tb.callback_query_handler(func=lambda call: call.data.startswith('del_movie'))
+def add_pend_handler(call):
+    idu = call.from_user.id
+    idp = extract_arg(call.data)
+    delM = delMovie(idu, idp[0], conn, c)
+    if(delM == None):
+        tb.send_message(call.from_user.id, "Error: La película no se encuentra en tu lista", parse_mode="Markdown")
+    else:
+        tb.send_message(call.from_user.id, "Película eliminada de la lista!", parse_mode="Markdown")
 
 tb.polling()
