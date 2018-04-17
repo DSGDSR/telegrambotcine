@@ -7,18 +7,18 @@ pend = 0
 #c.execute("DROP TABLE movie_user")
 
 def addMovie(idu, mov, state, conn, c):
-    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu), str(mov)))
+    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu).strip(), str(mov).strip()))
     idm = c.fetchone()
     if(idm==None):
         try:
             with conn:
-                c.execute("INSERT INTO movie_user (user, movie, estado) VALUES (?, ?, ?)", (str(idu), str(mov), int(state)))
+                c.execute("INSERT INTO movie_user (user, movie, estado) VALUES (?, ?, ?)", (str(idu).strip(), str(mov).strip(), int(state)))
                 if(state==1):
-                    print('Movie ' + str(mov) + 'added to seen for user ' + str(idu))
+                    print('Movie ' + str(mov) + ' added to seen for user ' + str(idu))
                 else:
-                    print('Movie ' + str(mov) + 'added to pending for user ' + str(idu))
+                    print('Movie ' + str(mov) + ' added to pending for user ' + str(idu))
                 return 1
-        except Exception, e:
+        except Exception as e:
             print('Error while adding a row: ' + str(e))
     elif(getState(idu, mov, conn, c)!=state):
         if(state==1):
@@ -31,15 +31,15 @@ def addMovie(idu, mov, state, conn, c):
 
 
 def delMovie(idu, mov, conn, c):
-    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu), str(mov)))
+    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu).strip(), str(mov).strip()))
     idm = c.fetchone()
     if(idm!=None):
         try:
             with conn:
-                c.execute("DELETE FROM movie_user WHERE user=? AND movie=?", (str(idu), str(mov)))
+                c.execute("DELETE FROM movie_user WHERE user=? AND movie=?", (str(idu).strip(), str(mov).strip()))
                 print('Movie added')
                 return 1
-        except Exception, e:
+        except Exception as e:
             print('Error while adding a row: ' + str(e))
     else:
         print('This row does not exists and could not be deleted (user=' + str(idu) + ', movie=' + str(mov) + ')')
@@ -47,7 +47,7 @@ def delMovie(idu, mov, conn, c):
 
 
 def setMovie(idu, mov, state, conn, c):
-    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu), str(mov)))
+    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu).strip(), str(mov).strip()))
     idm = c.fetchone()
     if(idm!=None):
         if(getState(idu, mov, conn, c)!=state):
@@ -56,7 +56,7 @@ def setMovie(idu, mov, state, conn, c):
                     c.execute("UPDATE movie_user SET estado=? WHERE id=?", (state, idm[0]))
                     print('Movie state modified')
                     return 1
-            except Exception, e:
+            except Exception as e:
                 print('Error while updating a row: ' + str(e))
         else:
             print('The movie already has this state')
@@ -67,29 +67,29 @@ def setMovie(idu, mov, state, conn, c):
 
 def getMovies(idu, conn, c):
     try:
-        c.execute("SELECT movie, estado FROM movie_user WHERE user=?", (str(idu),))
+        c.execute("SELECT movie, estado FROM movie_user WHERE user=?", (str(idu).strip(),))
         movies = c.fetchall()
         mlist = []
         for m in movies:
             mlist.append((m[0], m[1]))
         #print(mlist)
         return mlist
-    except Exception, e:
+    except Exception as e:
         print('Error retrieving ' + str(idu) + ' list: ' + str(e))
 
 def getState(idu, mov, conn, c):
-    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu), str(mov)))
+    c.execute("SELECT id FROM movie_user WHERE user=? AND movie=?", (str(idu).strip(), str(mov).strip()))
     #print((str(idu), str(mov)))
     idm = c.fetchone()
     if(idm!=None):
         try:
-            c.execute("SELECT estado FROM movie_user WHERE user=? AND movie=?", (str(idu), str(mov)))
+            c.execute("SELECT estado FROM movie_user WHERE user=? AND movie=?", (str(idu).strip(), str(mov).strip()))
             estado = c.fetchone()
             return int(estado[0])
-        except Exception, e:
+        except Exception as e:
             print('Error retrieving seen movies: ' + str(e))
     else:
-        print('This row does not exists')
+        #print('This row does not exists')
         return None
 
 def getPendMovies(idu, conn, c):
@@ -101,7 +101,7 @@ def getPendMovies(idu, conn, c):
             mlist.append(m[0])
         print(mlist)
         return mlist
-    except Exception, e:
+    except Exception as e:
         print('Error retrieving seen movies: ' + str(e))
 
 def getSeenMovies(idu, conn, c):
@@ -113,7 +113,7 @@ def getSeenMovies(idu, conn, c):
             mlist.append(m[0])
         print(mlist)
         return mlist
-    except Exception, e:
+    except Exception as e:
         print('Error retrieving seen movies: ' + str(e))
 
 #addMovie(2323, 126, pend)
