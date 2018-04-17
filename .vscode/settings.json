@@ -1,6 +1,0 @@
-{
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": false,
-    "python.pythonPath": "python3.6",
-    "python.linting.mypyEnabled": false,
-}
